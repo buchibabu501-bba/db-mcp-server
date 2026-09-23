@@ -16,9 +16,9 @@ from typing import Optional
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.cluster import Cluster, Session
 from cassandra.policies import DCAwareRoundRobinPolicy
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
-mcp = FastMCP("cassandra")
+mcp = MCPServer("cassandra")
 
 _SELECT_RE = re.compile(r"^\s*select\b", re.IGNORECASE)
 _session: Optional[Session] = None
@@ -99,4 +99,4 @@ def execute_cql(query: str) -> list[dict]:
 
 
 if __name__ == "__main__":
-    mcp.run()
+    mcp.run(transport="stdio")

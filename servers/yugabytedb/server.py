@@ -18,9 +18,9 @@ from typing import Optional
 import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
-mcp = FastMCP("yugabytedb")
+mcp = MCPServer("yugabytedb")
 
 _SELECT_RE = re.compile(r"^\s*select\b", re.IGNORECASE)
 _conn: Optional[psycopg2.extensions.connection] = None
@@ -97,4 +97,4 @@ def execute_sql(query: str) -> list[dict]:
 
 
 if __name__ == "__main__":
-    mcp.run()
+    mcp.run(transport="stdio")
