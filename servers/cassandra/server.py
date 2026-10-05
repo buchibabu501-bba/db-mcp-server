@@ -24,6 +24,16 @@ _SELECT_RE = re.compile(r"^\s*select\b", re.IGNORECASE)
 _session: Optional[Session] = None
 
 
+def _validate_select(query: str) -> str:
+    """Return the query without a trailing semicolon, or raise if it isn't a single SELECT."""
+    stripped = query.strip().rstrip(";").strip()
+    if not _SELECT_RE.match(stripped):
+        raise ValueError("Only SELECT statements are allowed through execute_cql.")
+    if ";" in stripped:
+        raise ValueError("Multiple statements are not allowed.")
+    return stripped
+
+
 def _get_session() -> Session:
     global _session
     if _session is not None:
@@ -92,8 +102,7 @@ def execute_cql(query: str) -> list[dict]:
 
     Only SELECT statements are permitted; anything else is rejected.
     """
-    if not _SELECT_RE.match(query):
-        raise ValueError("Only SELECT statements are allowed through execute_cql.")
+    query = _validate_select(query)
     rows = _get_session().execute(query)
     return [dict(row._asdict()) for row in rows]
 

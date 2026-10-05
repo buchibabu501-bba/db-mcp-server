@@ -26,6 +26,20 @@ _SELECT_RE = re.compile(r"^\s*select\b", re.IGNORECASE)
 _conn: Optional[psycopg2.extensions.connection] = None
 
 
+def _validate_select(query: str) -> str:
+    """Return the query without a trailing semicolon, or raise if it isn't a single SELECT.
+
+    Multi-statement input is rejected because a session-level read-only setting
+    can be overridden by a later statement in the same call.
+    """
+    stripped = query.strip().rstrip(";").strip()
+    if not _SELECT_RE.match(stripped):
+        raise ValueError("Only SELECT statements are allowed through execute_sql.")
+    if ";" in stripped:
+        raise ValueError("Multiple statements are not allowed.")
+    return stripped
+
+
 def _get_conn() -> psycopg2.extensions.connection:
     global _conn
     if _conn is not None and _conn.closed == 0:
@@ -89,11 +103,14 @@ def execute_sql(query: str) -> list[dict]:
 
     The connection is read-only, and only SELECT statements are permitted.
     """
-    if not _SELECT_RE.match(query):
-        raise ValueError("Only SELECT statements are allowed through execute_sql.")
+    query = _validate_select(query)
     with _get_conn().cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        cur.execute(query)
-        return [dict(row) for row in cur.fetchall()]
+        cur.execute("BEGIN READ ONLY")
+        try:
+            cur.execute(query)
+            return [dict(row) for row in cur.fetchall()]
+        finally:
+            cur.execute("ROLLBACK")
 
 
 if __name__ == "__main__":

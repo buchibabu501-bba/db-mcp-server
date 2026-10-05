@@ -17,6 +17,8 @@ Each server lives in its own directory under `servers/`, installs independently,
 
 These tools let an LLM explore and query a database on your behalf. Restricting every server to `SELECT`-only — and, where the driver supports it, a read-only session — means a misbehaving or manipulated prompt can't modify or delete your data through these tools.
 
+Specifically, query tools accept a single `SELECT` statement (multi-statement input is rejected), and the YugabyteDB server additionally runs each query in its own `BEGIN READ ONLY` transaction. For defense in depth, also connect with a database user that only has read privileges.
+
 ## Usage
 
 Each server's own README covers its setup and environment variables. In general, add it to your MCP client's config (e.g. Claude Desktop's `claude_desktop_config.json`):
